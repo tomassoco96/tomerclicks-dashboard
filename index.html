@@ -22,6 +22,7 @@
   --dark-card-hover: #2a2a50;
   --dark-surface: #1e1e3a;
   --dark-border: #2d2d5e;
+  --dark-editable: #2a2a4a;
   --text: #e8e8f0;
   --text-muted: #9090b0;
   --text-dim: #6868a0;
@@ -33,6 +34,10 @@
   --error-bg: rgba(231, 76, 60, 0.12);
   --info: #3498db;
   --info-bg: rgba(52, 152, 219, 0.12);
+  --purple: #9b59b6;
+  --purple-bg: rgba(155, 89, 182, 0.12);
+  --orange: #e67e22;
+  --orange-bg: rgba(230, 126, 34, 0.12);
   --radius: 14px;
   --radius-sm: 8px;
   --radius-lg: 20px;
@@ -332,7 +337,7 @@ body {
   background: var(--dark-surface);
   border: 1px solid var(--dark-border);
   border-radius: var(--radius-lg);
-  width: 100%; max-width: 680px;
+  width: 100%; max-width: 900px;
   margin-top: 1rem; margin-bottom: 2rem;
   box-shadow: var(--shadow-lg);
   transform: translateY(20px) scale(0.97);
@@ -361,6 +366,49 @@ body {
 .modal-close:hover { background: var(--error-bg); color: var(--error); border-color: rgba(231,76,60,0.3); }
 
 .modal-body { padding: 2rem; }
+
+/* ===== MODAL TABS ===== */
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--dark-border);
+}
+.modal-tab {
+  padding: 0.7rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+  position: relative;
+}
+.modal-tab:hover { color: var(--text); }
+.modal-tab.active {
+  color: var(--primary-light);
+  border-bottom-color: var(--primary);
+}
+.modal-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+}
+.modal-tab-content { display: none; animation: fadeSlide 0.3s ease; }
+.modal-tab-content.active { display: block; }
 
 /* Config Section */
 .config-section { margin-bottom: 2rem; }
@@ -487,6 +535,370 @@ body {
 .exec-detail .exec-message { color: var(--text-muted); margin-top: 0.15rem; font-size: 0.8rem; word-break: break-word; }
 .exec-detail .exec-time { color: var(--text-dim); font-size: 0.75rem; margin-top: 0.15rem; }
 
+/* ===== CONTENT EDITOR ===== */
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.content-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.content-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.content-stat strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.content-bulk-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.content-loading {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-dim);
+}
+.content-loading .content-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 1rem;
+}
+.content-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+.content-empty .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; opacity: 0.3; }
+
+.content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Content Card */
+.content-card {
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
+  position: relative;
+}
+.content-card.rewriting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+.content-card.rewriting::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+.content-card-spinner {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--info);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  z-index: 6;
+}
+.content-card.rewriting .content-card-spinner { display: block; }
+
+.content-card.saved {
+  border-color: var(--success);
+  box-shadow: 0 0 12px rgba(46, 204, 113, 0.15);
+}
+
+.content-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition);
+  gap: 0.75rem;
+}
+.content-card-header:hover {
+  background: rgba(255,255,255,0.02);
+}
+.content-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+.content-card-id {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-family: monospace;
+  white-space: nowrap;
+}
+.content-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.content-type-badge.carrusel { background: var(--info-bg); color: var(--info); }
+.content-type-badge.post { background: var(--success-bg); color: var(--success); }
+.content-type-badge.reel { background: var(--purple-bg); color: var(--purple); }
+.content-type-badge.historia { background: var(--orange-bg); color: var(--orange); }
+.content-type-badge.default { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+.content-card-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.content-card-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.content-card-status.pendiente { background: var(--warning-bg); color: var(--warning); }
+.content-card-status.programado { background: var(--info-bg); color: var(--info); }
+.content-card-status.publicado { background: var(--success-bg); color: var(--success); }
+.content-card-status.borrador { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+.content-card-expand {
+  font-size: 1rem;
+  color: var(--text-dim);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+.content-card.open .content-card-expand {
+  transform: rotate(180deg);
+}
+
+/* Carousel group label */
+.content-card-group {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: rgba(52,152,219,0.08);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Content Card Body */
+.content-card-body {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  animation: fadeSlide 0.25s ease;
+}
+.content-card.open .content-card-body { display: block; }
+
+.content-field {
+  margin-bottom: 1rem;
+  position: relative;
+}
+.content-field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+.content-field textarea,
+.content-field input[type="text"] {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background: var(--dark-editable);
+  border: 1.5px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color var(--transition), border-left-color var(--transition);
+  outline: none;
+  resize: none;
+}
+.content-field textarea {
+  min-height: 80px;
+  overflow: hidden;
+}
+.content-field textarea:focus,
+.content-field input[type="text"]:focus {
+  border-color: var(--primary);
+}
+.content-field.dirty textarea,
+.content-field.dirty input[type="text"] {
+  border-left: 3px solid var(--warning);
+}
+.content-field.just-saved textarea,
+.content-field.just-saved input[type="text"] {
+  border-left: 3px solid var(--success);
+  transition: border-left-color 0s;
+}
+
+.content-field-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--dark-editable);
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  color: var(--info);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: all var(--transition);
+  word-break: break-all;
+}
+.content-field-link:hover {
+  background: var(--info-bg);
+  border-color: rgba(52,152,219,0.4);
+}
+
+/* Content Card Footer */
+.content-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  flex-wrap: wrap;
+}
+
+.content-btn {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.content-btn:hover { transform: translateY(-1px); }
+.content-btn:active { transform: translateY(0); }
+.content-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+.content-btn.save {
+  background: rgba(46,204,113,0.15);
+  border-color: rgba(46,204,113,0.3);
+  color: var(--success);
+}
+.content-btn.save:hover:not(:disabled) { background: rgba(46,204,113,0.25); border-color: rgba(46,204,113,0.5); }
+
+.content-btn.rewrite-full {
+  background: var(--info-bg);
+  border-color: rgba(52,152,219,0.3);
+  color: var(--info);
+}
+.content-btn.rewrite-full:hover:not(:disabled) { background: rgba(52,152,219,0.2); border-color: rgba(52,152,219,0.5); }
+
+.content-btn.rewrite-small {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border-color: var(--dark-border);
+  color: var(--text-muted);
+}
+.content-btn.rewrite-small:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+.content-btn.bulk-rewrite {
+  background: rgba(231,76,60,0.12);
+  border-color: rgba(231,76,60,0.25);
+  color: var(--primary-light);
+}
+.content-btn.bulk-rewrite:hover:not(:disabled) { background: rgba(231,76,60,0.2); border-color: rgba(231,76,60,0.4); }
+
+.content-instructions {
+  flex: 1;
+  min-width: 180px;
+}
+.content-instructions input {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: var(--dark-editable);
+  border: 1.5px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.content-instructions input:focus { border-color: var(--primary); }
+.content-instructions input::placeholder { color: var(--text-dim); font-size: 0.78rem; }
+
+/* Bulk rewriting progress */
+.bulk-progress {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+.bulk-progress.active { display: flex; }
+.bulk-progress-bar-container {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bulk-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+.bulk-progress-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ===== CALENDAR TAB ===== */
 .calendar-placeholder {
   text-align: center;
@@ -582,12 +994,16 @@ body {
   .header { padding: 0 1rem; }
   .main { padding: 1rem; }
   .client-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .modal { margin: 0; border-radius: var(--radius) var(--radius) 0 0; }
+  .modal { margin: 0; border-radius: var(--radius) var(--radius) 0 0; max-width: 100%; }
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal-body { padding: 1.25rem; }
   .actions-grid { grid-template-columns: 1fr; }
   .config-row { flex-direction: column; gap: 0.5rem; }
   .header-title { font-size: 1rem; }
+  .content-card-header { flex-wrap: wrap; }
+  .content-card-footer { flex-direction: column; align-items: stretch; }
+  .content-instructions { min-width: 100%; }
+  .content-header { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 480px) {
   .client-grid { grid-template-columns: 1fr; }
@@ -689,63 +1105,77 @@ body {
     </div>
     <div class="modal-body">
 
-      <!-- Config -->
-      <div class="config-section">
-        <h4>Configuracion</h4>
-        <div class="config-row">
-          <div class="config-field">
-            <label>Mes</label>
-            <input type="month" id="modal-mes">
+      <!-- Modal Tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-modal-tab="acciones">Acciones</button>
+        <button class="modal-tab" data-modal-tab="contenido">Contenido <span class="modal-tab-badge" id="content-count-badge" style="display:none;">0</span></button>
+      </div>
+
+      <!-- Tab: Acciones -->
+      <div class="modal-tab-content active" id="modal-tab-acciones">
+        <!-- Config -->
+        <div class="config-section">
+          <h4>Configuracion</h4>
+          <div class="config-row">
+            <div class="config-field">
+              <label>Mes</label>
+              <input type="month" id="modal-mes">
+            </div>
+          </div>
+          <div class="config-row">
+            <div class="config-field">
+              <label>Carpeta Posteos</label>
+              <input type="text" id="modal-posteos" placeholder="URL o ID de carpeta en Drive">
+              <div class="field-hint">Se extrae automaticamente el ID de URLs de Drive</div>
+            </div>
+          </div>
+          <div class="config-row">
+            <div class="config-field" style="flex:1;">
+              <label>Carpeta Historias (opcional)</label>
+              <input type="text" id="modal-historias" placeholder="URL o ID de carpeta">
+            </div>
+            <div class="config-field" style="flex:1;">
+              <label>Carpeta Reels (opcional)</label>
+              <input type="text" id="modal-reels" placeholder="URL o ID de carpeta">
+            </div>
           </div>
         </div>
-        <div class="config-row">
-          <div class="config-field">
-            <label>Carpeta Posteos</label>
-            <input type="text" id="modal-posteos" placeholder="URL o ID de carpeta en Drive">
-            <div class="field-hint">Se extrae automaticamente el ID de URLs de Drive</div>
+
+        <!-- Actions -->
+        <div class="config-section">
+          <h4>Acciones</h4>
+          <div class="actions-grid">
+            <button class="action-btn copy-btn" id="btn-copy" data-tooltip="Genera copy IA para cada imagen de las carpetas">
+              <div class="spinner"></div>
+              <span class="action-icon">&#9997;&#65039;</span>
+              <span class="action-label">Generar Copy</span>
+              <span class="action-desc">Copywriter IA</span>
+            </button>
+            <button class="action-btn schedule-btn" id="btn-schedule" data-tooltip="Programa el contenido y envia email con calendario">
+              <div class="spinner"></div>
+              <span class="action-icon">&#128197;</span>
+              <span class="action-label">Programar</span>
+              <span class="action-desc">Agenda + Email</span>
+            </button>
+            <button class="action-btn metrics-btn" id="btn-metrics" data-tooltip="Analiza metricas de Instagram y genera reporte">
+              <div class="spinner"></div>
+              <span class="action-icon">&#128200;</span>
+              <span class="action-label">Reporte</span>
+              <span class="action-desc">Metricas IG</span>
+            </button>
           </div>
         </div>
-        <div class="config-row">
-          <div class="config-field" style="flex:1;">
-            <label>Carpeta Historias (opcional)</label>
-            <input type="text" id="modal-historias" placeholder="URL o ID de carpeta">
-          </div>
-          <div class="config-field" style="flex:1;">
-            <label>Carpeta Reels (opcional)</label>
-            <input type="text" id="modal-reels" placeholder="URL o ID de carpeta">
-          </div>
+
+        <!-- Execution Log -->
+        <div class="config-section">
+          <h4>Registro de Ejecuciones</h4>
+          <div class="exec-log" id="exec-log"></div>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="config-section">
-        <h4>Acciones</h4>
-        <div class="actions-grid">
-          <button class="action-btn copy-btn" id="btn-copy" data-tooltip="Genera copy IA para cada imagen de las carpetas">
-            <div class="spinner"></div>
-            <span class="action-icon">&#9997;&#65039;</span>
-            <span class="action-label">Generar Copy</span>
-            <span class="action-desc">Copywriter IA</span>
-          </button>
-          <button class="action-btn schedule-btn" id="btn-schedule" data-tooltip="Programa el contenido y envia email con calendario">
-            <div class="spinner"></div>
-            <span class="action-icon">&#128197;</span>
-            <span class="action-label">Programar</span>
-            <span class="action-desc">Agenda + Email</span>
-          </button>
-          <button class="action-btn metrics-btn" id="btn-metrics" data-tooltip="Analiza metricas de Instagram y genera reporte">
-            <div class="spinner"></div>
-            <span class="action-icon">&#128200;</span>
-            <span class="action-label">Reporte</span>
-            <span class="action-desc">Metricas IG</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Execution Log -->
-      <div class="config-section">
-        <h4>Registro de Ejecuciones</h4>
-        <div class="exec-log" id="exec-log"></div>
+      <!-- Tab: Contenido -->
+      <div class="modal-tab-content" id="modal-tab-contenido">
+        <div id="content-editor-root"></div>
       </div>
 
     </div>
@@ -769,7 +1199,8 @@ const N8N_BASE = 'https://n8n.srv1364640.hstgr.cloud';
 const WEBHOOKS = {
   copywriter: `${N8N_BASE}/webhook/tomerclicks-copywriter`,
   scheduler: `${N8N_BASE}/webhook/tomerclicks-scheduler`,
-  metrics: `${N8N_BASE}/webhook/tomerclicks-metrics`
+  metrics: `${N8N_BASE}/webhook/tomerclicks-metrics`,
+  content: `${N8N_BASE}/webhook/tomerclicks-content`
 };
 const EMAIL_DESTINO = 'tomasoco96@gmail.com';
 const CORRECT_PASSWORD = 'tomer2026';
@@ -777,6 +1208,9 @@ const CORRECT_PASSWORD = 'tomer2026';
 // ===== STATE =====
 let currentClientId = null;
 let modalExecLog = [];
+let contentData = [];          // Current content items loaded
+let contentOriginal = {};      // Original values for dirty detection: { contentId: { Copy, Hashtags, CTA } }
+let bulkRewriting = false;
 
 // ===== HELPERS =====
 function $(sel) { return document.querySelector(sel); }
@@ -803,6 +1237,22 @@ function formatTime(date) {
 
 function formatDateTime(date) {
   return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) + ' ' + formatTime(date);
+}
+
+function formatContentDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch { return dateStr; }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // LocalStorage helpers
@@ -951,6 +1401,21 @@ $$('.nav-btn').forEach(btn => {
   }
 })();
 
+// ===== MODAL TABS =====
+$$('.modal-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    $$('.modal-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    $$('.modal-tab-content').forEach(c => c.classList.remove('active'));
+    $(`#modal-tab-${tab.dataset.modalTab}`).classList.add('active');
+
+    // Auto-load content when switching to content tab
+    if (tab.dataset.modalTab === 'contenido' && contentData.length === 0 && currentClientId) {
+      loadContent();
+    }
+  });
+});
+
 // ===== RENDER CLIENTS =====
 function renderClients() {
   const grid = $('#client-grid');
@@ -1014,6 +1479,8 @@ function openClientDetail(clientId) {
   if (!client) return;
 
   modalExecLog = [];
+  contentData = [];
+  contentOriginal = {};
 
   $('#modal-avatar').style.background = client.color;
   $('#modal-avatar').textContent = client.initials;
@@ -1032,6 +1499,18 @@ function openClientDetail(clientId) {
   // Clear exec log
   renderModalExecLog();
 
+  // Reset modal tabs to Acciones
+  $$('.modal-tab').forEach(t => t.classList.remove('active'));
+  $$('.modal-tab-content').forEach(c => c.classList.remove('active'));
+  $('.modal-tab[data-modal-tab="acciones"]').classList.add('active');
+  $('#modal-tab-acciones').classList.add('active');
+
+  // Reset content badge
+  $('#content-count-badge').style.display = 'none';
+
+  // Clear content editor
+  $('#content-editor-root').innerHTML = '';
+
   // Enable buttons
   ['btn-copy', 'btn-schedule', 'btn-metrics'].forEach(id => {
     const btn = $(`#${id}`);
@@ -1048,6 +1527,8 @@ function closeModal() {
   $('#modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
   currentClientId = null;
+  contentData = [];
+  contentOriginal = {};
 }
 
 $('#modal-close').addEventListener('click', closeModal);
@@ -1226,6 +1707,512 @@ $('#btn-metrics').addEventListener('click', () => {
     }, 100);
   });
 });
+
+// ====================================================================
+// ===== CONTENT MANAGEMENT EDITOR =====
+// ====================================================================
+
+function getContentTypeBadgeClass(tipo) {
+  if (!tipo) return 'default';
+  const t = tipo.toLowerCase();
+  if (t.includes('carrusel') || t.includes('carousel')) return 'carrusel';
+  if (t.includes('reel')) return 'reel';
+  if (t.includes('historia') || t.includes('story') || t.includes('stories')) return 'historia';
+  if (t.includes('post')) return 'post';
+  return 'default';
+}
+
+function getContentStatusClass(estado) {
+  if (!estado) return 'borrador';
+  const s = estado.toLowerCase();
+  if (s.includes('pendiente') || s.includes('pending')) return 'pendiente';
+  if (s.includes('programado') || s.includes('scheduled')) return 'programado';
+  if (s.includes('publicado') || s.includes('published')) return 'publicado';
+  return 'borrador';
+}
+
+function getTypeBreakdown(items) {
+  const counts = {};
+  items.forEach(item => {
+    const tipo = item.Tipo_Contenido || 'Otro';
+    counts[tipo] = (counts[tipo] || 0) + 1;
+  });
+  return Object.entries(counts).map(([k,v]) => `${v} ${k}`).join(', ');
+}
+
+// Auto-resize textareas
+function autoResizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+// ===== LOAD CONTENT =====
+async function loadContent() {
+  const root = $('#content-editor-root');
+  const mes = $('#modal-mes').value;
+
+  root.innerHTML = `
+    <div class="content-loading">
+      <div class="content-spinner"></div>
+      <div>Cargando contenido...</div>
+    </div>`;
+
+  try {
+    const response = await fetch(WEBHOOKS.content, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'read',
+        client_id: currentClientId,
+        mes: mes
+      })
+    });
+
+    let data;
+    const ct = response.headers.get('content-type');
+    if (ct && ct.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (!response.ok) {
+      const errMsg = typeof data === 'object' ? (data.message || data.error || JSON.stringify(data)) : String(data);
+      root.innerHTML = `<div class="content-empty"><span class="empty-icon">&#9888;</span>Error al cargar: ${escapeHtml(errMsg)}</div>`;
+      return;
+    }
+
+    if (typeof data === 'object' && data.content && Array.isArray(data.content)) {
+      contentData = data.content;
+    } else if (Array.isArray(data)) {
+      contentData = data;
+    } else {
+      contentData = [];
+    }
+
+    // Store originals for dirty detection
+    contentOriginal = {};
+    contentData.forEach(item => {
+      const id = item.ID_Contenido;
+      if (id) {
+        contentOriginal[id] = {
+          Copy: item.Copy || '',
+          Hashtags: item.Hashtags || '',
+          CTA: item.CTA || ''
+        };
+      }
+    });
+
+    // Update badge
+    const badge = $('#content-count-badge');
+    if (contentData.length > 0) {
+      badge.textContent = contentData.length;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    renderContentEditor();
+
+  } catch (err) {
+    root.innerHTML = `<div class="content-empty"><span class="empty-icon">&#9888;</span>Error de conexion: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+// ===== RENDER CONTENT EDITOR =====
+function renderContentEditor() {
+  const root = $('#content-editor-root');
+
+  if (contentData.length === 0) {
+    root.innerHTML = `
+      <div class="content-empty">
+        <span class="empty-icon">&#128196;</span>
+        No hay contenido generado para este mes.<br>
+        Usa "Generar Copy" en la pestana Acciones para crear contenido.
+      </div>`;
+    return;
+  }
+
+  const breakdown = getTypeBreakdown(contentData);
+
+  let html = `
+    <div class="content-header">
+      <div class="content-stats">
+        <div class="content-stat"><strong>${contentData.length}</strong> piezas de contenido</div>
+        <div class="content-stat">${escapeHtml(breakdown)}</div>
+      </div>
+      <div class="content-bulk-actions">
+        <button class="content-btn rewrite-full" onclick="contentLoadRefresh()" title="Recargar contenido desde la hoja">&#8635; Recargar</button>
+        <button class="content-btn bulk-rewrite" id="btn-bulk-rewrite" onclick="bulkRewriteAll()" title="Reescribir todo el contenido con IA">Rehacer Todo</button>
+      </div>
+    </div>
+    <div class="bulk-progress" id="bulk-progress">
+      <div class="bulk-progress-bar-container">
+        <div class="bulk-progress-bar" id="bulk-progress-bar"></div>
+      </div>
+      <div class="bulk-progress-text" id="bulk-progress-text">0 / 0</div>
+    </div>
+    <div class="content-list" id="content-list">`;
+
+  contentData.forEach((item, index) => {
+    const contentId = item.ID_Contenido || `item-${index}`;
+    const tipo = item.Tipo_Contenido || 'Post';
+    const badgeClass = getContentTypeBadgeClass(tipo);
+    const statusClass = getContentStatusClass(item.Estado);
+    const estado = item.Estado || 'Borrador';
+    const fecha = formatContentDate(item.Fecha_Publicacion);
+    const enlace = item.Enlace_Creativo || '';
+    const grupo = item.Grupo_Carrusel || '';
+    const slide = item.Slide_Numero || '';
+
+    let groupLabel = '';
+    if (grupo && slide) {
+      groupLabel = `<span class="content-card-group">Grupo ${escapeHtml(grupo)} - Slide ${escapeHtml(String(slide))}</span>`;
+    } else if (grupo) {
+      groupLabel = `<span class="content-card-group">Grupo ${escapeHtml(grupo)}</span>`;
+    }
+
+    html += `
+      <div class="content-card" id="cc-${escapeHtml(contentId)}" data-content-id="${escapeHtml(contentId)}">
+        <div class="content-card-spinner"></div>
+        <div class="content-card-header" onclick="toggleContentCard('${escapeHtml(contentId)}')">
+          <div class="content-card-header-left">
+            <span class="content-card-id">${escapeHtml(contentId)}</span>
+            <span class="content-type-badge ${badgeClass}">${escapeHtml(tipo)}</span>
+            ${groupLabel}
+            <span class="content-card-date">${escapeHtml(fecha)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="content-card-status ${statusClass}">${escapeHtml(estado)}</span>
+            <span class="content-card-expand">&#9660;</span>
+          </div>
+        </div>
+        <div class="content-card-body">
+          <div class="content-field" id="field-copy-${escapeHtml(contentId)}">
+            <label>Copy</label>
+            <textarea id="ta-copy-${escapeHtml(contentId)}" oninput="onContentFieldChange('${escapeHtml(contentId)}', 'Copy', this); autoResizeTextarea(this);">${escapeHtml(item.Copy || '')}</textarea>
+          </div>
+          <div class="content-field" id="field-hashtags-${escapeHtml(contentId)}">
+            <label>Hashtags</label>
+            <input type="text" id="ta-hashtags-${escapeHtml(contentId)}" value="${escapeHtml(item.Hashtags || '')}" oninput="onContentFieldChange('${escapeHtml(contentId)}', 'Hashtags', this);">
+          </div>
+          <div class="content-field" id="field-cta-${escapeHtml(contentId)}">
+            <label>CTA</label>
+            <input type="text" id="ta-cta-${escapeHtml(contentId)}" value="${escapeHtml(item.CTA || '')}" oninput="onContentFieldChange('${escapeHtml(contentId)}', 'CTA', this);">
+          </div>
+          ${enlace ? `
+          <div class="content-field">
+            <label>Enlace Creativo</label>
+            <a href="${escapeHtml(enlace)}" target="_blank" rel="noopener" class="content-field-link">&#128206; ${escapeHtml(enlace.length > 60 ? enlace.substring(0, 60) + '...' : enlace)}</a>
+          </div>` : ''}
+          <div class="content-card-footer">
+            <button class="content-btn save" onclick="saveContentItem('${escapeHtml(contentId)}')">Guardar</button>
+            <button class="content-btn rewrite-full" onclick="rewriteContentItem('${escapeHtml(contentId)}', 'full')">Reescribir Todo</button>
+            <button class="content-btn rewrite-small" onclick="rewriteContentItem('${escapeHtml(contentId)}', 'copy_only')">Solo Copy</button>
+            <button class="content-btn rewrite-small" onclick="rewriteContentItem('${escapeHtml(contentId)}', 'hashtags')">Solo Hashtags</button>
+            <button class="content-btn rewrite-small" onclick="rewriteContentItem('${escapeHtml(contentId)}', 'cta')">Solo CTA</button>
+            <div class="content-instructions">
+              <input type="text" id="instr-${escapeHtml(contentId)}" placeholder="Instrucciones para reescribir (ej: hacelo mas informal)">
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += '</div>';
+  root.innerHTML = html;
+
+  // Auto-resize all visible textareas
+  root.querySelectorAll('textarea').forEach(ta => {
+    autoResizeTextarea(ta);
+  });
+}
+
+// ===== TOGGLE CONTENT CARD =====
+function toggleContentCard(contentId) {
+  const card = $(`#cc-${contentId}`);
+  if (!card) return;
+  const wasOpen = card.classList.contains('open');
+  card.classList.toggle('open');
+  // Auto-resize textarea when opening
+  if (!wasOpen) {
+    const ta = card.querySelector('textarea');
+    if (ta) {
+      setTimeout(() => autoResizeTextarea(ta), 10);
+    }
+  }
+}
+
+// ===== DIRTY DETECTION =====
+function onContentFieldChange(contentId, fieldName, el) {
+  const original = contentOriginal[contentId];
+  if (!original) return;
+  const fieldDiv = $(`#field-${fieldName.toLowerCase()}-${contentId}`);
+  if (!fieldDiv) return;
+
+  const currentVal = el.value;
+  const originalVal = original[fieldName] || '';
+
+  if (currentVal !== originalVal) {
+    fieldDiv.classList.add('dirty');
+    fieldDiv.classList.remove('just-saved');
+  } else {
+    fieldDiv.classList.remove('dirty');
+  }
+}
+
+// ===== SAVE CONTENT ITEM =====
+async function saveContentItem(contentId) {
+  const card = $(`#cc-${contentId}`);
+  if (!card) return;
+
+  const copyEl = $(`#ta-copy-${contentId}`);
+  const hashtagsEl = $(`#ta-hashtags-${contentId}`);
+  const ctaEl = $(`#ta-cta-${contentId}`);
+
+  if (!copyEl || !hashtagsEl || !ctaEl) return;
+
+  const fields = {
+    Copy: copyEl.value,
+    Hashtags: hashtagsEl.value,
+    CTA: ctaEl.value
+  };
+
+  // Disable buttons in this card
+  card.querySelectorAll('.content-btn').forEach(b => b.disabled = true);
+
+  try {
+    const response = await fetch(WEBHOOKS.content, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update',
+        content_id: contentId,
+        fields: fields
+      })
+    });
+
+    let data;
+    const ct = response.headers.get('content-type');
+    if (ct && ct.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (response.ok) {
+      // Update originals
+      contentOriginal[contentId] = { ...fields };
+
+      // Visual feedback: flash green and remove dirty
+      ['copy', 'hashtags', 'cta'].forEach(f => {
+        const fieldDiv = $(`#field-${f}-${contentId}`);
+        if (fieldDiv) {
+          fieldDiv.classList.remove('dirty');
+          fieldDiv.classList.add('just-saved');
+          setTimeout(() => fieldDiv.classList.remove('just-saved'), 1500);
+        }
+      });
+
+      // Flash card border
+      card.classList.add('saved');
+      setTimeout(() => card.classList.remove('saved'), 1500);
+
+      showToast('Contenido guardado', 'success');
+    } else {
+      const errMsg = typeof data === 'object' ? (data.message || data.error || JSON.stringify(data)) : String(data);
+      showToast(`Error al guardar: ${errMsg}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Error de conexion: ${err.message}`, 'error');
+  } finally {
+    card.querySelectorAll('.content-btn').forEach(b => b.disabled = false);
+  }
+}
+
+// ===== REWRITE CONTENT ITEM =====
+async function rewriteContentItem(contentId, rewriteType) {
+  const card = $(`#cc-${contentId}`);
+  if (!card) return;
+
+  const instrEl = $(`#instr-${contentId}`);
+  const instructions = instrEl ? instrEl.value : '';
+
+  card.classList.add('rewriting');
+  card.querySelectorAll('.content-btn').forEach(b => b.disabled = true);
+
+  try {
+    const response = await fetch(WEBHOOKS.content, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'rewrite',
+        content_id: contentId,
+        rewrite_type: rewriteType,
+        instructions: instructions || undefined
+      })
+    });
+
+    let data;
+    const ct = response.headers.get('content-type');
+    if (ct && ct.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (response.ok) {
+      showToast(`Contenido reescrito (${rewriteType})`, 'success');
+      // Reload the item from the response or reload all
+      await reloadSingleItem(contentId, data);
+    } else {
+      const errMsg = typeof data === 'object' ? (data.message || data.error || JSON.stringify(data)) : String(data);
+      showToast(`Error al reescribir: ${errMsg}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Error de conexion: ${err.message}`, 'error');
+  } finally {
+    card.classList.remove('rewriting');
+    card.querySelectorAll('.content-btn').forEach(b => b.disabled = false);
+  }
+}
+
+// ===== RELOAD SINGLE ITEM =====
+async function reloadSingleItem(contentId, responseData) {
+  // If the rewrite API returned updated content, use it directly
+  let updatedItem = null;
+  if (responseData && typeof responseData === 'object') {
+    if (responseData.content && typeof responseData.content === 'object' && !Array.isArray(responseData.content)) {
+      updatedItem = responseData.content;
+    } else if (responseData.Copy !== undefined || responseData.Hashtags !== undefined || responseData.CTA !== undefined) {
+      updatedItem = responseData;
+    }
+  }
+
+  if (updatedItem) {
+    // Update in memory
+    const idx = contentData.findIndex(c => c.ID_Contenido === contentId);
+    if (idx >= 0) {
+      if (updatedItem.Copy !== undefined) contentData[idx].Copy = updatedItem.Copy;
+      if (updatedItem.Hashtags !== undefined) contentData[idx].Hashtags = updatedItem.Hashtags;
+      if (updatedItem.CTA !== undefined) contentData[idx].CTA = updatedItem.CTA;
+    }
+    // Update originals
+    contentOriginal[contentId] = {
+      Copy: updatedItem.Copy !== undefined ? updatedItem.Copy : (contentOriginal[contentId]?.Copy || ''),
+      Hashtags: updatedItem.Hashtags !== undefined ? updatedItem.Hashtags : (contentOriginal[contentId]?.Hashtags || ''),
+      CTA: updatedItem.CTA !== undefined ? updatedItem.CTA : (contentOriginal[contentId]?.CTA || '')
+    };
+    // Update DOM fields
+    const copyEl = $(`#ta-copy-${contentId}`);
+    const hashtagsEl = $(`#ta-hashtags-${contentId}`);
+    const ctaEl = $(`#ta-cta-${contentId}`);
+    if (copyEl && updatedItem.Copy !== undefined) { copyEl.value = updatedItem.Copy; autoResizeTextarea(copyEl); }
+    if (hashtagsEl && updatedItem.Hashtags !== undefined) hashtagsEl.value = updatedItem.Hashtags;
+    if (ctaEl && updatedItem.CTA !== undefined) ctaEl.value = updatedItem.CTA;
+    // Remove dirty flags
+    ['copy', 'hashtags', 'cta'].forEach(f => {
+      const fieldDiv = $(`#field-${f}-${contentId}`);
+      if (fieldDiv) {
+        fieldDiv.classList.remove('dirty');
+        fieldDiv.classList.add('just-saved');
+        setTimeout(() => fieldDiv.classList.remove('just-saved'), 1500);
+      }
+    });
+  } else {
+    // Fallback: reload all content
+    await loadContent();
+  }
+}
+
+// ===== REFRESH CONTENT (RELOAD BUTTON) =====
+async function contentLoadRefresh() {
+  contentData = [];
+  contentOriginal = {};
+  await loadContent();
+}
+
+// ===== BULK REWRITE ALL =====
+async function bulkRewriteAll() {
+  if (bulkRewriting) return;
+  if (contentData.length === 0) {
+    showToast('No hay contenido para reescribir', 'error');
+    return;
+  }
+
+  const confirm = window.confirm(`Vas a reescribir las ${contentData.length} piezas de contenido con IA. Esto puede demorar. Continuar?`);
+  if (!confirm) return;
+
+  bulkRewriting = true;
+  const bulkBtn = $('#btn-bulk-rewrite');
+  if (bulkBtn) bulkBtn.disabled = true;
+
+  const progressEl = $('#bulk-progress');
+  const barEl = $('#bulk-progress-bar');
+  const textEl = $('#bulk-progress-text');
+  progressEl.classList.add('active');
+
+  let completed = 0;
+  const total = contentData.length;
+
+  for (let i = 0; i < contentData.length; i++) {
+    const item = contentData[i];
+    const contentId = item.ID_Contenido;
+    if (!contentId) continue;
+
+    textEl.textContent = `${completed + 1} / ${total}`;
+    barEl.style.width = `${((completed) / total) * 100}%`;
+
+    const card = $(`#cc-${contentId}`);
+    if (card) {
+      card.classList.add('rewriting');
+      // Scroll card into view
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    try {
+      const response = await fetch(WEBHOOKS.content, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'rewrite',
+          content_id: contentId,
+          rewrite_type: 'full'
+        })
+      });
+
+      let data;
+      const ct = response.headers.get('content-type');
+      if (ct && ct.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (response.ok) {
+        await reloadSingleItem(contentId, data);
+      }
+    } catch (err) {
+      // Continue with next item
+    } finally {
+      if (card) card.classList.remove('rewriting');
+      completed++;
+    }
+  }
+
+  barEl.style.width = '100%';
+  textEl.textContent = `${total} / ${total} - Completado`;
+
+  setTimeout(() => {
+    progressEl.classList.remove('active');
+    barEl.style.width = '0%';
+  }, 2000);
+
+  bulkRewriting = false;
+  if (bulkBtn) bulkBtn.disabled = false;
+
+  showToast(`Reescritura masiva completada: ${total} piezas`, 'success');
+}
 
 // ===== INIT =====
 initAuth();
