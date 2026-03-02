@@ -899,48 +899,176 @@ body {
   white-space: nowrap;
 }
 
-/* ===== CALENDAR TAB ===== */
-.calendar-placeholder {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-.calendar-placeholder .cal-icon {
-  font-size: 3.5rem; opacity: 0.3;
-  display: block; margin-bottom: 1rem;
-}
-.calendar-placeholder h3 {
-  font-size: 1.2rem; font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-.calendar-placeholder p { color: var(--text-muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto; }
-
-.calendar-controls {
+/* ===== CANVA CALENDAR TAB ===== */
+.canva-controls {
   display: flex; align-items: center; gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem; flex-wrap: wrap;
 }
-.calendar-grid-placeholder {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+.canva-controls select, .canva-controls input[type="month"] {
+  padding: 0.55rem 0.9rem;
+  background: var(--dark-card);
+  border: 1.5px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit; font-size: 0.9rem;
+  cursor: pointer; outline: none;
+  transition: border-color var(--transition);
+}
+.canva-controls select:focus, .canva-controls input[type="month"]:focus { border-color: var(--primary); }
+.canva-load-btn {
+  padding: 0.55rem 1.4rem;
+  background: var(--primary); border: none;
+  border-radius: var(--radius-sm);
+  color: white; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.canva-load-btn:hover { background: var(--primary-light); transform: translateY(-1px); }
+.canva-load-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.canva-load-btn .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+.canva-load-btn.loading .spinner { display: inline-block; }
+.canva-load-btn.loading .btn-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.canva-empty {
+  text-align: center; padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+.canva-empty-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+.canva-empty h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+.canva-empty p { font-size: 0.9rem; max-width: 440px; margin: 0 auto; }
+
+.canva-slides { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.canva-slide {
   background: var(--dark-card);
   border: 1px solid var(--dark-border);
   border-radius: var(--radius);
-  padding: 1rem;
+  overflow: hidden;
+}
+.canva-slide-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--dark-border);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.canva-slide-header:hover { background: rgba(255,255,255,0.05); }
+.canva-slide-header h3 {
+  font-size: 0.95rem; font-weight: 600;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.canva-slide-num {
+  background: var(--primary);
+  color: white;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700;
+  flex-shrink: 0;
+}
+.canva-slide-actions { display: flex; gap: 0.5rem; }
+.canva-copy-table-btn {
+  padding: 0.35rem 0.8rem;
+  background: transparent;
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted); font-size: 0.78rem;
+  font-weight: 500; cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.canva-copy-table-btn:hover { border-color: var(--success); color: var(--success); }
+.canva-copy-table-btn.copied { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+
+.canva-slide-body { padding: 0; overflow-x: auto; }
+.canva-slide-body.collapsed { display: none; }
+
+.canva-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.canva-table th {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--dark-border);
+}
+.canva-table td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+  vertical-align: top;
+  max-width: 300px;
+  position: relative;
+}
+.canva-table tr:last-child td { border-bottom: none; }
+.canva-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.canva-cell-copy {
+  position: absolute; top: 4px; right: 4px;
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  width: 22px; height: 22px;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.65rem;
+  transition: all 0.15s;
+}
+.canva-table td:hover .canva-cell-copy { display: flex; }
+.canva-cell-copy:hover { border-color: var(--success); color: var(--success); }
+.canva-cell-copy.copied { background: var(--success); color: white; border-color: var(--success); }
+
+.canva-cell-text {
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  padding-right: 24px;
+}
+.canva-cell-text.copy-text {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.canva-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.canva-type-post { background: var(--info-bg); color: var(--info); }
+.canva-type-carrusel { background: var(--purple-bg); color: var(--purple); }
+.canva-type-historia { background: var(--orange-bg); color: var(--orange); }
+.canva-type-reel { background: var(--success-bg); color: var(--success); }
+
+.canva-summary {
+  display: flex; gap: 1rem; flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
-.cal-day-header {
-  text-align: center; padding: 0.5rem;
-  font-size: 0.78rem; font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-.cal-day {
-  aspect-ratio: 1;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.85rem; color: var(--text-muted);
+.canva-summary-card {
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.02);
+  padding: 0.8rem 1.2rem;
+  flex: 1; min-width: 140px;
 }
+.canva-summary-card .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.2rem; }
+.canva-summary-card .value { font-size: 1.3rem; font-weight: 700; }
 
 /* ===== TOAST ===== */
 .toast-container {
@@ -1064,26 +1192,25 @@ body {
       </div>
     </div>
 
-    <!-- Calendar Tab -->
+    <!-- Canva Calendar Guide Tab -->
     <div class="tab-view" id="tab-calendario">
-      <div class="section-title">Calendario de Contenido</div>
-      <div class="calendar-controls">
-        <select class="config-field" id="cal-month-select" style="width:180px;padding:0.5rem 0.8rem;background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:0.9rem;cursor:pointer;">
+      <div class="section-title">Calendario Canva - Guia de llenado</div>
+      <div class="canva-controls">
+        <select id="canva-client-select">
+          <option value="">Seleccionar cliente...</option>
         </select>
+        <input type="month" id="canva-month-select">
+        <button class="canva-load-btn" id="canva-load-btn" onclick="loadCanvaCalendar()">
+          <div class="spinner"></div>
+          <span class="btn-text">Cargar Calendario</span>
+        </button>
       </div>
-      <div class="calendar-grid-placeholder">
-        <div class="cal-day-header">Lun</div>
-        <div class="cal-day-header">Mar</div>
-        <div class="cal-day-header">Mie</div>
-        <div class="cal-day-header">Jue</div>
-        <div class="cal-day-header">Vie</div>
-        <div class="cal-day-header">Sab</div>
-        <div class="cal-day-header">Dom</div>
-      </div>
-      <div class="calendar-placeholder">
-        <span class="cal-icon">&#128197;</span>
-        <h3>Calendario: proximamente</h3>
-        <p>Esta seccion mostrara el contenido programado para cada cliente, con vista mensual y detalle diario. Se conectara a la hoja de Google Sheets via n8n.</p>
+      <div id="canva-calendar-root">
+        <div class="canva-empty">
+          <div class="canva-empty-icon">&#128203;</div>
+          <h3>Selecciona un cliente y mes</h3>
+          <p>Se mostrara el contenido organizado exactamente como las slides de tu calendario Canva, listo para copiar y pegar.</p>
+        </div>
       </div>
     </div>
 
@@ -1385,21 +1512,326 @@ $$('.nav-btn').forEach(btn => {
   });
 });
 
-// Populate calendar month selector
+// Populate Canva calendar selectors
 (function() {
-  const sel = $('#cal-month-select');
-  const now = new Date();
-  for (let i = -2; i < 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const label = d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  const clientSel = $('#canva-client-select');
+  CLIENTS.forEach(c => {
     const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
-    if (i === 0) opt.selected = true;
-    sel.appendChild(opt);
-  }
+    opt.value = c.id;
+    opt.textContent = c.name;
+    clientSel.appendChild(opt);
+  });
+  const monthSel = $('#canva-month-select');
+  const now = new Date();
+  monthSel.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 })();
+
+// ===== CANVA CALENDAR GUIDE =====
+let canvaCalendarData = [];
+
+async function loadCanvaCalendar() {
+  const clientId = $('#canva-client-select').value;
+  const mes = $('#canva-month-select').value;
+  if (!clientId || !mes) { showToast('Selecciona cliente y mes', 'error'); return; }
+
+  const btn = $('#canva-load-btn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(WEBHOOKS.content, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'read', client_id: clientId, mes })
+    });
+    let data = await resp.json();
+    if (Array.isArray(data) && data[0] && data[0].items) data = data[0];
+    else if (Array.isArray(data) && data[0] && data[0].json) data = data[0].json;
+    canvaCalendarData = data.items || data.data || [];
+    if (!Array.isArray(canvaCalendarData)) canvaCalendarData = [];
+    const client = CLIENTS.find(c => c.id === clientId);
+    renderCanvaCalendar(client, mes);
+    showToast(`${canvaCalendarData.length} items cargados`, 'success');
+  } catch (err) {
+    showToast('Error cargando contenido: ' + err.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function getMonthLabel(mes) {
+  const [y, m] = mes.split('-');
+  const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+  const label = d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function formatCanvaDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr + 'T12:00:00');
+  if (isNaN(d)) return dateStr;
+  const dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+  return `${dias[d.getDay()]} ${d.getDate()}`;
+}
+
+function formatCanvaHour(dateStr) {
+  if (!dateStr) return '-';
+  // Try to extract time from date string or Fecha_Publicacion
+  const match = dateStr.match(/(\d{1,2}):(\d{2})/);
+  if (match) return `${match[1]}:${match[2]} hs`;
+  return '-';
+}
+
+function getTypeBadge(tipo) {
+  if (!tipo) return '';
+  const t = tipo.toLowerCase();
+  let cls = 'canva-type-post';
+  if (t.includes('carrusel') || t.includes('carousel')) cls = 'canva-type-carrusel';
+  else if (t.includes('historia') || t.includes('story')) cls = 'canva-type-historia';
+  else if (t.includes('reel')) cls = 'canva-type-reel';
+  return `<span class="canva-type-badge ${cls}">${escapeHtml(tipo)}</span>`;
+}
+
+function canvaCopyCell(btn, text) {
+  navigator.clipboard.writeText(text || '').then(() => {
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1200);
+  });
+}
+
+function canvaCopyTable(btn, slideId) {
+  const table = document.querySelector(`#canva-slide-${slideId} .canva-table`);
+  if (!table) return;
+  const rows = table.querySelectorAll('tr');
+  let tsv = '';
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('th, td');
+    const vals = [];
+    cells.forEach(cell => {
+      // Get text content, skip copy buttons
+      let text = '';
+      cell.childNodes.forEach(n => {
+        if (n.nodeType === 3) text += n.textContent;
+        else if (n.classList && !n.classList.contains('canva-cell-copy')) text += n.textContent;
+      });
+      vals.push(text.trim().replace(/\t/g, ' '));
+    });
+    tsv += vals.join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(tsv.trim()).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = 'Copiado!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '&#128203; Copiar tabla'; }, 2000);
+  });
+}
+
+function toggleCanvaSlide(slideId) {
+  const body = document.querySelector(`#canva-slide-${slideId} .canva-slide-body`);
+  if (body) body.classList.toggle('collapsed');
+}
+
+function renderCanvaCalendar(client, mes) {
+  const root = $('#canva-calendar-root');
+  const items = canvaCalendarData;
+
+  if (items.length === 0) {
+    root.innerHTML = `<div class="canva-empty">
+      <div class="canva-empty-icon">&#128683;</div>
+      <h3>Sin contenido para ${client.name} - ${getMonthLabel(mes)}</h3>
+      <p>Primero genera el contenido desde la pestaña Clientes (Generar Copy + Programar).</p>
+    </div>`;
+    return;
+  }
+
+  // Separate posts vs historias
+  const posts = items.filter(i => !(i.Tipo || '').toLowerCase().includes('historia'));
+  const historias = items.filter(i => (i.Tipo || '').toLowerCase().includes('historia'));
+
+  // Group by category for Slide 6
+  const catMap = {};
+  posts.forEach(i => {
+    const cat = i.Categoria || 'General';
+    if (!catMap[cat]) catMap[cat] = { tipo: new Set(), count: 0, ctas: [] };
+    catMap[cat].tipo.add(i.Tipo || 'Post');
+    catMap[cat].count++;
+    if (i.CTA) catMap[cat].ctas.push(i.CTA);
+  });
+
+  // Sort posts by date
+  const sortedPosts = [...posts].sort((a, b) => {
+    const da = a.Fecha_Publicacion || '';
+    const db = b.Fecha_Publicacion || '';
+    return da.localeCompare(db);
+  });
+
+  // Sort historias by date
+  const sortedHistorias = [...historias].sort((a, b) => {
+    const da = a.Fecha_Publicacion || '';
+    const db = b.Fecha_Publicacion || '';
+    return da.localeCompare(db);
+  });
+
+  // Summary cards
+  let html = `<div class="canva-summary">
+    <div class="canva-summary-card">
+      <div class="label">Cliente</div>
+      <div class="value" style="color:${client.color}">${escapeHtml(client.name)}</div>
+    </div>
+    <div class="canva-summary-card">
+      <div class="label">Mes</div>
+      <div class="value">${getMonthLabel(mes)}</div>
+    </div>
+    <div class="canva-summary-card">
+      <div class="label">Posts</div>
+      <div class="value">${posts.length}</div>
+    </div>
+    <div class="canva-summary-card">
+      <div class="label">Historias</div>
+      <div class="value">${historias.length}</div>
+    </div>
+    <div class="canva-summary-card">
+      <div class="label">Total</div>
+      <div class="value">${items.length}</div>
+    </div>
+  </div>`;
+
+  html += '<div class="canva-slides">';
+
+  // ========== SLIDE 6: Formatos de Contenido ==========
+  html += `<div class="canva-slide" id="canva-slide-6">
+    <div class="canva-slide-header" onclick="toggleCanvaSlide('6')">
+      <h3><span class="canva-slide-num">6</span> Formatos de Contenido</h3>
+      <div class="canva-slide-actions">
+        <button class="canva-copy-table-btn" onclick="event.stopPropagation();canvaCopyTable(this,'6')">&#128203; Copiar tabla</button>
+      </div>
+    </div>
+    <div class="canva-slide-body">
+      <table class="canva-table"><tr><th>#</th><th>Campana / Categoria</th><th>Formato</th><th>Piezas</th><th>CTA</th></tr>`;
+
+  let catIdx = 1;
+  for (const [cat, info] of Object.entries(catMap)) {
+    const tipos = Array.from(info.tipo).join(', ');
+    const cta = info.ctas[0] || '-';
+    html += `<tr>
+      <td>${catIdx}</td>
+      <td><span class="canva-cell-text">${escapeHtml(cat)}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,'${escapeHtml(cat).replace(/'/g,"\\'")}')">&#128203;</button></td>
+      <td>${getTypeBadge(tipos)}</td>
+      <td>${info.count}</td>
+      <td><span class="canva-cell-text">${escapeHtml(cta)}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,${JSON.stringify(cta).replace(/</g,'\\u003c')})">&#128203;</button></td>
+    </tr>`;
+    catIdx++;
+  }
+  html += '</table></div></div>';
+
+  // ========== SLIDES 7-8: Calendario de Publicaciones ==========
+  html += `<div class="canva-slide" id="canva-slide-78">
+    <div class="canva-slide-header" onclick="toggleCanvaSlide('78')">
+      <h3><span class="canva-slide-num">7-8</span> Calendario de Publicaciones</h3>
+      <div class="canva-slide-actions">
+        <button class="canva-copy-table-btn" onclick="event.stopPropagation();canvaCopyTable(this,'78')">&#128203; Copiar tabla</button>
+      </div>
+    </div>
+    <div class="canva-slide-body">
+      <table class="canva-table"><tr><th>#</th><th>Campana</th><th>Fecha</th><th>Hora</th><th>Formato</th><th>Categoria</th><th>Plataformas</th><th>Link Creativo</th></tr>`;
+
+  sortedPosts.forEach((item, idx) => {
+    const campana = item.Archivo_Nombre || item.Nombre || `Post ${idx+1}`;
+    const fecha = formatCanvaDate(item.Fecha_Publicacion);
+    const hora = formatCanvaHour(item.Fecha_Publicacion || item.Hora);
+    const formato = item.Tipo || 'Post';
+    const categoria = item.Categoria || '-';
+    const plataformas = 'Instagram';
+    const link = item.Enlace_Creativo || '-';
+    const linkHtml = link !== '-' ? `<a href="${escapeHtml(link)}" target="_blank" style="color:var(--info);text-decoration:none;font-size:0.8rem;">Ver</a>` : '-';
+
+    html += `<tr>
+      <td>${idx + 1}</td>
+      <td><span class="canva-cell-text">${escapeHtml(campana)}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,${JSON.stringify(campana).replace(/</g,'\\u003c')})">&#128203;</button></td>
+      <td>${escapeHtml(fecha)}</td>
+      <td>${escapeHtml(hora)}</td>
+      <td>${getTypeBadge(formato)}</td>
+      <td><span class="canva-cell-text">${escapeHtml(categoria)}</span></td>
+      <td>${plataformas}</td>
+      <td>${linkHtml}</td>
+    </tr>`;
+  });
+  html += '</table></div></div>';
+
+  // ========== SLIDE 9: Detalle de Historias ==========
+  html += `<div class="canva-slide" id="canva-slide-9">
+    <div class="canva-slide-header" onclick="toggleCanvaSlide('9')">
+      <h3><span class="canva-slide-num">9</span> Detalle de Historias</h3>
+      <div class="canva-slide-actions">
+        <button class="canva-copy-table-btn" onclick="event.stopPropagation();canvaCopyTable(this,'9')">&#128203; Copiar tabla</button>
+      </div>
+    </div>
+    <div class="canva-slide-body">`;
+
+  if (sortedHistorias.length > 0) {
+    html += `<table class="canva-table"><tr><th>#</th><th>Fecha</th><th>Titulo</th><th>Formato</th><th>Categoria</th><th>Plataformas</th><th>CTA</th></tr>`;
+    sortedHistorias.forEach((item, idx) => {
+      const titulo = item.Archivo_Nombre || item.Nombre || `Historia ${idx+1}`;
+      html += `<tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(formatCanvaDate(item.Fecha_Publicacion))}</td>
+        <td><span class="canva-cell-text">${escapeHtml(titulo)}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,${JSON.stringify(titulo).replace(/</g,'\\u003c')})">&#128203;</button></td>
+        <td>${getTypeBadge('Historia')}</td>
+        <td>${escapeHtml(item.Categoria || '-')}</td>
+        <td>Instagram Stories</td>
+        <td><span class="canva-cell-text">${escapeHtml(item.CTA || '-')}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,${JSON.stringify(item.CTA || '').replace(/</g,'\\u003c')})">&#128203;</button></td>
+      </tr>`;
+    });
+    html += '</table>';
+  } else {
+    html += '<div style="padding:2rem;text-align:center;color:var(--text-dim);">Sin historias programadas para este mes</div>';
+  }
+  html += '</div></div>';
+
+  // ========== SLIDE 10: Seguimiento de Metricas ==========
+  html += `<div class="canva-slide" id="canva-slide-10">
+    <div class="canva-slide-header" onclick="toggleCanvaSlide('10')">
+      <h3><span class="canva-slide-num">10</span> Seguimiento de Metricas</h3>
+      <div class="canva-slide-actions">
+        <button class="canva-copy-table-btn" onclick="event.stopPropagation();canvaCopyTable(this,'10')">&#128203; Copiar tabla</button>
+      </div>
+    </div>
+    <div class="canva-slide-body">
+      <table class="canva-table">
+        <tr><th>Metrica</th><th>Semana 1</th><th>Semana 2</th><th>Semana 3</th><th>Semana 4</th><th>Total Mes</th></tr>
+        <tr><td>Engagement Rate</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>Alcance Total</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>Impresiones</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>Seguidores Nuevos</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>Clics en Link</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>Posts Publicados</td><td>-</td><td>-</td><td>-</td><td>${posts.length}</td><td>${posts.length}</td></tr>
+        <tr><td>Historias Publicadas</td><td>-</td><td>-</td><td>-</td><td>${historias.length}</td><td>${historias.length}</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // ========== BONUS: Copy completo por post ==========
+  html += `<div class="canva-slide" id="canva-slide-copy">
+    <div class="canva-slide-header" onclick="toggleCanvaSlide('copy')">
+      <h3><span class="canva-slide-num" style="background:var(--success)">+</span> Copy completo por post (bonus)</h3>
+    </div>
+    <div class="canva-slide-body collapsed">
+      <table class="canva-table"><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Copy + Hashtags + CTA</th></tr>`;
+
+  sortedPosts.forEach((item, idx) => {
+    const fullCopy = [item.Copy_Final || item.Copy || '', item.Hashtags || '', item.CTA || ''].filter(Boolean).join('\n\n');
+    html += `<tr>
+      <td>${idx + 1}</td>
+      <td>${escapeHtml(formatCanvaDate(item.Fecha_Publicacion))}</td>
+      <td>${getTypeBadge(item.Tipo || 'Post')}</td>
+      <td><span class="canva-cell-text copy-text">${escapeHtml(fullCopy)}</span><button class="canva-cell-copy" onclick="event.stopPropagation();canvaCopyCell(this,${JSON.stringify(fullCopy).replace(/</g,'\\u003c')})">&#128203;</button></td>
+    </tr>`;
+  });
+  html += '</table></div></div>';
+
+  html += '</div>'; // close canva-slides
+  root.innerHTML = html;
+}
 
 // ===== MODAL TABS =====
 $$('.modal-tab').forEach(tab => {
