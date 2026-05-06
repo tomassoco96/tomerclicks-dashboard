@@ -1247,6 +1247,7 @@ body {
             <div class="config-field">
               <label>Mes</label>
               <input type="month" id="modal-mes">
+              <div class="field-hint" id="mes-hint" style="display:none;color:#f39c12;"></div>
             </div>
           </div>
           <div class="config-row">
@@ -1342,6 +1343,7 @@ let bulkRewriting = false;
 
 // ===== HELPERS =====
 function $(sel) { return document.querySelector(sel); }
+function $id(id) { return document.getElementById(id); }
 function $$(sel) { return document.querySelectorAll(sel); }
 
 function extractFolderId(input) {
@@ -1357,6 +1359,16 @@ function extractFolderId(input) {
 function getCurrentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getSmartMonth() {
+  const now = new Date();
+  // Si estamos despues del dia 20, sugerir el mes siguiente
+  if (now.getDate() >= 20) {
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+  }
+  return getCurrentMonth();
 }
 
 function formatTime(date) {
@@ -1846,8 +1858,9 @@ function openClientDetail(clientId) {
   $('#modal-client-name').textContent = client.name;
   $('#modal-client-handle').textContent = `${client.handle}  \u00B7  ${client.id}`;
 
-  // Set month
-  $('#modal-mes').value = getCurrentMonth();
+  // Set month (si dia >= 20, sugiere el mes siguiente)
+  $('#modal-mes').value = getSmartMonth();
+  updateMesHint();
 
   // Load saved folders
   const folders = loadFolders(clientId);
@@ -2002,6 +2015,11 @@ async function callWebhook(url, body, btnId, actionLabel, runKey) {
       addActivity(currentClientId, client.name, actionLabel, 'success', summary);
       showToast(`${client.name}: ${actionLabel} completado`, 'success');
       renderClients();
+
+      // Auto-reload contenido despues de generar copy o programar
+      if (runKey === 'copy' || runKey === 'schedule') {
+        loadContent();
+      }
     } else {
       const errMsg = typeof data === 'object' ? (data.message || data.error || JSON.stringify(data)) : String(data);
       updateModalExecEntry(logIndex, 'error', `Error ${response.status}: ${errMsg}`);
@@ -2028,6 +2046,7 @@ $('#btn-copy').addEventListener('click', () => {
   callWebhook(WEBHOOKS.copywriter, {
     client_id: currentClientId,
     mes,
+    folder_id: carpetas.posteos,
     carpetas
   }, 'btn-copy', 'Generar Copy', 'copy');
 });
@@ -2053,6 +2072,25 @@ $('#btn-metrics').addEventListener('click', () => {
     mes
   }, 'btn-metrics', 'Reporte Metricas', 'metrics');
 });
+
+// ===== MES HINT =====
+function updateMesHint() {
+  const hint = $('#mes-hint');
+  const mes = $('#modal-mes').value;
+  const current = getCurrentMonth();
+  if (mes < current) {
+    hint.textContent = 'Atencion: estas generando para un mes pasado';
+    hint.style.color = '#e74c3c';
+    hint.style.display = 'block';
+  } else if (mes === current) {
+    hint.textContent = 'Mes actual seleccionado';
+    hint.style.color = '#f39c12';
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+$('#modal-mes').addEventListener('change', updateMesHint);
 
 // ===== AUTO-EXTRACT FOLDER ID FEEDBACK =====
 ['modal-posteos', 'modal-historias', 'modal-reels'].forEach(id => {
@@ -2289,7 +2327,7 @@ function renderContentEditor() {
 
 // ===== TOGGLE CONTENT CARD =====
 function toggleContentCard(contentId) {
-  const card = $(`#cc-${contentId}`);
+  const card = $id(`cc-${contentId}`);
   if (!card) return;
   const wasOpen = card.classList.contains('open');
   card.classList.toggle('open');
@@ -2306,7 +2344,7 @@ function toggleContentCard(contentId) {
 function onContentFieldChange(contentId, fieldName, el) {
   const original = contentOriginal[contentId];
   if (!original) return;
-  const fieldDiv = $(`#field-${fieldName.toLowerCase()}-${contentId}`);
+  const fieldDiv = $id(`field-${fieldName.toLowerCase()}-${contentId}`);
   if (!fieldDiv) return;
 
   const currentVal = el.value;
@@ -2322,12 +2360,12 @@ function onContentFieldChange(contentId, fieldName, el) {
 
 // ===== SAVE CONTENT ITEM =====
 async function saveContentItem(contentId) {
-  const card = $(`#cc-${contentId}`);
+  const card = $id(`cc-${contentId}`);
   if (!card) return;
 
-  const copyEl = $(`#ta-copy-${contentId}`);
-  const hashtagsEl = $(`#ta-hashtags-${contentId}`);
-  const ctaEl = $(`#ta-cta-${contentId}`);
+  const copyEl = $id(`ta-copy-${contentId}`);
+  const hashtagsEl = $id(`ta-hashtags-${contentId}`);
+  const ctaEl = $id(`ta-cta-${contentId}`);
 
   if (!copyEl || !hashtagsEl || !ctaEl) return;
 
@@ -2365,7 +2403,7 @@ async function saveContentItem(contentId) {
 
       // Visual feedback: flash green and remove dirty
       ['copy', 'hashtags', 'cta'].forEach(f => {
-        const fieldDiv = $(`#field-${f}-${contentId}`);
+        const fieldDiv = $id(`field-${f}-${contentId}`);
         if (fieldDiv) {
           fieldDiv.classList.remove('dirty');
           fieldDiv.classList.add('just-saved');
@@ -2391,10 +2429,10 @@ async function saveContentItem(contentId) {
 
 // ===== REWRITE CONTENT ITEM =====
 async function rewriteContentItem(contentId, rewriteType) {
-  const card = $(`#cc-${contentId}`);
+  const card = $id(`cc-${contentId}`);
   if (!card) return;
 
-  const instrEl = $(`#instr-${contentId}`);
+  const instrEl = $id(`instr-${contentId}`);
   const instructions = instrEl ? instrEl.value : '';
 
   card.classList.add('rewriting');
@@ -2463,15 +2501,15 @@ async function reloadSingleItem(contentId, responseData) {
       CTA: updatedItem.CTA !== undefined ? updatedItem.CTA : (contentOriginal[contentId]?.CTA || '')
     };
     // Update DOM fields
-    const copyEl = $(`#ta-copy-${contentId}`);
-    const hashtagsEl = $(`#ta-hashtags-${contentId}`);
-    const ctaEl = $(`#ta-cta-${contentId}`);
+    const copyEl = $id(`ta-copy-${contentId}`);
+    const hashtagsEl = $id(`ta-hashtags-${contentId}`);
+    const ctaEl = $id(`ta-cta-${contentId}`);
     if (copyEl && updatedItem.Copy !== undefined) { copyEl.value = updatedItem.Copy; autoResizeTextarea(copyEl); }
     if (hashtagsEl && updatedItem.Hashtags !== undefined) hashtagsEl.value = updatedItem.Hashtags;
     if (ctaEl && updatedItem.CTA !== undefined) ctaEl.value = updatedItem.CTA;
     // Remove dirty flags
     ['copy', 'hashtags', 'cta'].forEach(f => {
-      const fieldDiv = $(`#field-${f}-${contentId}`);
+      const fieldDiv = $id(`field-${f}-${contentId}`);
       if (fieldDiv) {
         fieldDiv.classList.remove('dirty');
         fieldDiv.classList.add('just-saved');
@@ -2522,7 +2560,7 @@ async function bulkRewriteAll() {
     textEl.textContent = `${completed + 1} / ${total}`;
     barEl.style.width = `${((completed) / total) * 100}%`;
 
-    const card = $(`#cc-${contentId}`);
+    const card = $id(`cc-${contentId}`);
     if (card) {
       card.classList.add('rewriting');
       // Scroll card into view
