@@ -489,6 +489,28 @@ body {
 .action-btn.schedule-btn:hover:not(:disabled) { background: var(--success-bg); border-color: rgba(46,204,113,0.5); }
 .action-btn.metrics-btn { border-color: rgba(243,156,18,0.3); }
 .action-btn.metrics-btn:hover:not(:disabled) { background: var(--warning-bg); border-color: rgba(243,156,18,0.5); }
+.action-btn.preview-btn { border-color: rgba(155,89,182,0.3); }
+.action-btn.preview-btn:hover:not(:disabled) { background: rgba(155,89,182,0.1); border-color: rgba(155,89,182,0.5); }
+
+.check-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.35rem 0.7rem; border-radius: 999px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.85rem; cursor: pointer; user-select: none;
+  transition: all 0.15s;
+}
+.check-pill:hover { background: rgba(255,255,255,0.08); }
+.check-pill input[type="checkbox"] { margin: 0; cursor: pointer; }
+.check-pill:has(input:checked) { background: rgba(52,152,219,0.15); border-color: rgba(52,152,219,0.4); }
+
+.preview-result {
+  margin-top: 0.8rem; padding: 0.8rem 1rem; border-radius: 6px;
+  background: rgba(155,89,182,0.08); border: 1px solid rgba(155,89,182,0.25);
+  font-size: 0.85rem; line-height: 1.5;
+}
+.preview-result strong { color: #b475d4; }
+.preview-result .cost-high { color: #e74c3c; font-weight: 600; }
+.preview-result .cost-ok { color: #2ecc71; font-weight: 600; }
 
 /* Loading spinner in button */
 .action-btn .spinner {
@@ -1267,12 +1289,35 @@ body {
               <input type="text" id="modal-reels" placeholder="URL o ID de carpeta">
             </div>
           </div>
+          <div class="config-row">
+            <div class="config-field" style="flex:2;">
+              <label>Tipos a generar</label>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;padding-top:0.3rem;">
+                <label class="check-pill"><input type="checkbox" class="modal-tipo" value="Post" checked> Posts</label>
+                <label class="check-pill"><input type="checkbox" class="modal-tipo" value="Carrusel" checked> Carruseles</label>
+                <label class="check-pill"><input type="checkbox" class="modal-tipo" value="Reel" checked> Reels</label>
+                <label class="check-pill"><input type="checkbox" class="modal-tipo" value="Historia" checked> Historias</label>
+              </div>
+            </div>
+            <div class="config-field" style="flex:1;">
+              <label>Cap costo USD</label>
+              <input type="number" id="modal-cap" step="0.05" min="0" placeholder="0.50" value="0.50">
+              <div class="field-hint">Si el estimado supera el cap, pide confirmacion antes de ejecutar.</div>
+            </div>
+          </div>
+          <div id="preview-result-box" class="preview-result" style="display:none;"></div>
         </div>
 
         <!-- Actions -->
         <div class="config-section">
           <h4>Acciones</h4>
           <div class="actions-grid">
+            <button class="action-btn preview-btn" id="btn-preview" data-tooltip="Cuenta items y estima costo sin gastar tokens">
+              <div class="spinner"></div>
+              <span class="action-icon">&#128064;</span>
+              <span class="action-label">Vista Previa</span>
+              <span class="action-desc">Cuenta + costo</span>
+            </button>
             <button class="action-btn copy-btn" id="btn-copy" data-tooltip="Genera copy IA para cada imagen de las carpetas">
               <div class="spinner"></div>
               <span class="action-icon">&#9997;&#65039;</span>
@@ -1968,7 +2013,28 @@ function getConfigFromModal() {
   if (historias) carpetas.historias = historias;
   if (reels) carpetas.reels = reels;
 
-  return { mes, carpetas };
+  const tipos = Array.from(document.querySelectorAll('.modal-tipo:checked')).map(c => c.value);
+  const cap = parseFloat($('#modal-cap').value) || 0;
+
+  return { mes, carpetas, tipos, cap };
+}
+
+function renderPreviewResult(data, capUSD) {
+  const box = $('#preview-result-box');
+  if (!box) return;
+  const d = data.desglose || {};
+  const cost = data.costo_estimado_usd || 0;
+  const exceedsCap = capUSD > 0 && cost > capUSD;
+  const costClass = exceedsCap ? 'cost-high' : 'cost-ok';
+  box.style.display = 'block';
+  box.innerHTML = '<strong>Vista previa</strong> - ' + (data.total || 0) + ' items: '
+    + 'Posts ' + (d.Post || 0) + ', '
+    + 'Carruseles ' + (d.Carrusel || 0) + ', '
+    + 'Reels ' + (d.Reel || 0) + ', '
+    + 'Historias ' + (d.Historia || 0)
+    + '<br>Costo estimado: <span class="' + costClass + '">$' + cost.toFixed(3) + ' USD</span>'
+    + (capUSD > 0 ? ' (cap $' + capUSD.toFixed(2) + ')' : '')
+    + (exceedsCap ? '<br><strong style="color:#e74c3c;">Supera el cap. Generar Copy va a pedir confirmacion.</strong>' : '');
 }
 
 // ===== WEBHOOK CALLS =====
@@ -2037,17 +2103,108 @@ async function callWebhook(url, body, btnId, actionLabel, runKey) {
 }
 
 // ===== ACTION BUTTONS =====
-$('#btn-copy').addEventListener('click', () => {
-  const { mes, carpetas } = getConfigFromModal();
-  if (!carpetas.posteos) {
-    showToast('Debes ingresar al menos la carpeta de Posteos', 'error');
+async function fetchPreview() {
+  const { mes, carpetas, tipos } = getConfigFromModal();
+  if (Object.keys(carpetas).length === 0) {
+    showToast('Cargá al menos una carpeta', 'error');
+    return null;
+  }
+  if (tipos.length === 0) {
+    showToast('Tenés que seleccionar al menos un tipo', 'error');
+    return null;
+  }
+  const resp = await fetch(WEBHOOKS.copywriter, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_id: currentClientId,
+      mes,
+      carpetas,
+      tipos,
+      modo: 'preview'
+    })
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error('Preview error: ' + txt.slice(0, 200));
+  }
+  return resp.json();
+}
+
+$('#btn-preview').addEventListener('click', async () => {
+  const btn = $('#btn-preview');
+  btn.disabled = true; btn.classList.add('loading');
+  try {
+    const data = await fetchPreview();
+    if (data) {
+      const { cap } = getConfigFromModal();
+      renderPreviewResult(data, cap);
+      showToast(`Preview: ${data.total} items, $${(data.costo_estimado_usd || 0).toFixed(3)} USD`, 'success');
+    }
+  } catch (e) {
+    showToast('Error en preview: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+});
+
+$('#btn-copy').addEventListener('click', async () => {
+  const { mes, carpetas, tipos, cap } = getConfigFromModal();
+  if (Object.keys(carpetas).length === 0) {
+    showToast('Cargá al menos una carpeta', 'error');
     return;
   }
+  if (tipos.length === 0) {
+    showToast('Tenés que seleccionar al menos un tipo', 'error');
+    return;
+  }
+
+  // 1) Pedir preview siempre antes para chequear cap
+  const btn = $('#btn-copy');
+  btn.disabled = true; btn.classList.add('loading');
+  let preview;
+  try {
+    preview = await fetchPreview();
+  } catch (e) {
+    btn.disabled = false; btn.classList.remove('loading');
+    showToast('Error: ' + e.message, 'error');
+    return;
+  }
+  if (!preview) {
+    btn.disabled = false; btn.classList.remove('loading');
+    return;
+  }
+  renderPreviewResult(preview, cap);
+
+  const cost = preview.costo_estimado_usd || 0;
+  const total = preview.total || 0;
+
+  if (total === 0) {
+    btn.disabled = false; btn.classList.remove('loading');
+    showToast('No hay items para generar', 'info');
+    return;
+  }
+
+  // 2) Si supera el cap, pedir confirmacion
+  if (cap > 0 && cost > cap) {
+    const ok = confirm('La estimación es $' + cost.toFixed(3) + ' USD y supera el cap de $' + cap.toFixed(2) + '.\n\n¿Continuar igual?');
+    if (!ok) {
+      btn.disabled = false; btn.classList.remove('loading');
+      showToast('Cancelado', 'info');
+      return;
+    }
+  }
+
+  btn.disabled = false; btn.classList.remove('loading');
+
+  // 3) Ejecutar
   callWebhook(WEBHOOKS.copywriter, {
     client_id: currentClientId,
     mes,
     folder_id: carpetas.posteos,
-    carpetas
+    carpetas,
+    tipos,
+    modo: 'generate'
   }, 'btn-copy', 'Generar Copy', 'copy');
 });
 
